@@ -1,13 +1,15 @@
-FROM golang:alpine
+FROM golang:alpine AS build-env
 
 ENV GO111MODULE=on
 ENV PORT=9000
-WORKDIR /app/server
+WORKDIR /src
 
-COPY go.mod .
-COPY go.sum .
+ADD . .
 RUN go mod download
 
-COPY . .
-RUN cd /app/server && go build -o server
-CMD ["./server"]
+RUN cd /src && GO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app
+
+FROM alpine
+WORKDIR /app
+COPY --from=build-env /src/app /app/
+ENTRYPOINT ./app
